@@ -1512,18 +1512,36 @@ module.exports = {
     demonstrateYawBlockchain
 };
 
-// Run demonstration if this file is executed directly
+// ✅ Only run the demo in development, not in production (e.g., Render)
 if (require.main === module) {
+  if (process.env.NODE_ENV !== 'production') {
     demonstrateYawBlockchain()
-        .then(blockchain => {
-            console.log('\n🎉 YAW NETWORK DEMONSTRATION COMPLETED SUCCESSFULLY! 🎉');
-            console.log('🌍 Africa has shown the world what real blockchain innovation looks like! 🚀');
-            
-            // Export final state
-            const exportData = blockchain.exportBlockchainData();
-            console.log(`\n📁 Blockchain data exported: ${JSON.stringify(exportData.metadata)}`);
-        })
-        .catch(error => {
-            console.error('❌ Error during demonstration:', error);
-        });
+      .then(blockchain => {
+        console.log('\n🎉 YAW NETWORK DEMONSTRATION COMPLETED SUCCESSFULLY! 🎉');
+        console.log('🌍 Africa has shown the world what real blockchain innovation looks like! 🚀');
+
+        // Export final state
+        const exportData = blockchain.exportBlockchainData();
+        console.log(`\n📁 Blockchain data exported: ${JSON.stringify(exportData.metadata)}`);
+      })
+      .catch(error => {
+        console.error('⚠️ Demo failed:', error.message);
+        console.log('✅ Server will still start normally.');
+      })
+      .finally(() => {
+        startServer();
+      });
+  } else {
+    console.log('🚀 Production mode detected — skipping demonstration and starting API...');
+    startServer();
+  }
+}
+
+// ✅ Helper to ensure the server always starts
+function startServer() {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Yaw Network API is running on port ${PORT}`);
+  });
+}
                                                                         }
