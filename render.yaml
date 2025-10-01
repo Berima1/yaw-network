@@ -1,82 +1,33 @@
-# YAW NETWORK - RENDER DEPLOYMENT CONFIGURATION
-# Optimized for African blockchain performance
-
 services:
   - type: web
-    name: yaw-network-api
+    name: yaw-backend-api
     env: node
-    plan: starter # Upgrade to pro for production
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    healthCheckPath: /health
-    
-    # Environment Variables
+    plan: starter
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 3000
+      - key: MONGODB_URI
+        fromDatabase:
+          name: yaw-mongodb
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: BLOCKCHAIN_NETWORK
         value: african-mainnet
-      - key: CONSENSUS_ALGORITHM
-        value: ubuntu-byzantine
-      - key: UBUNTU_MESSAGE
-        value: "I am because we are - Ubuntu Technology"
-      - key: SUPPORTED_COUNTRIES
-        value: "nigeria,kenya,ghana,south-africa,egypt,morocco,ethiopia"
-      - key: AFRICAN_VALIDATOR_RATIO
-        value: "0.875"
-      - key: ENABLE_METRICS
-        value: "true"
-      - key: LOG_LEVEL
-        value: info
-      - key: CORS_ORIGIN
-        value: "*"
-    
-    # Custom domains
+    healthCheckPath: /health
     domains:
       - api.yawnetwork.org
-      - yaw-api.onrender.com
     
-    # Auto-deploy settings  
-    autoDeploy: true
-    branch: main
-    
-    # Resource allocation
-    disk: 1
-    
-    # Health check configuration
-    healthCheck:
-      httpPath: /health
-      httpHeaders:
-        - name: User-Agent
-          value: Render-Health-Check
-      initialDelaySeconds: 30
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-      successThreshold: 1
-
-# Optional: Redis cache service
   - type: redis
     name: yaw-redis
     plan: starter
-    ipAllowList: []
-
-# Optional: PostgreSQL database
+    
   - type: postgres
     name: yaw-postgres
     plan: starter
     databaseName: yawnetwork
-    user: ubuntu_admin
-
-# Background worker (optional)
-  - type: worker
-    name: yaw-blockchain-worker
-    env: node
-    buildCommand: npm install
-    startCommand: node worker.js
-    envVarsFrom:
-      - service: yaw-network-api
+    user: yaw_admin
