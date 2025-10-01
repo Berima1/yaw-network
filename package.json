@@ -1,0 +1,39 @@
+{
+  "name": "yaw-network",
+  "version": "1.0.0-african-genesis",
+  "description": "Revolutionary African Blockchain Network - Ubuntu Technology",
+  "keywords": ["blockchain", "africa", "ubuntu", "cryptocurrency", "defi"],
+  "author": "Yaw Network Team <team@yawnetwork.org>",
+  "license": "MIT",
+  "homepage": "https://yawnetwork.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yaw-network/yaw-blockchain.git"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
+    "build": "npm run backend:build && npm run frontend:build",
+    "test": "npm run backend:test && npm run frontend:test",
+    "test:integration": "jest --config=jest.integration.config.js",
+    "backend:dev": "cd backend && npm run dev",
+    "backend:build": "cd backend && npm run build",
+    "backend:test": "cd backend && npm test",
+    "frontend:dev": "cd frontend && npm start",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:test": "cd frontend && npm test",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "deploy:vercel": "./deployment/scripts/deploy-vercel.sh",
+    "deploy:render": "./deployment/scripts/deploy-render.sh",
+    "setup": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0",
+    "jest": "^29.5.0",
+    "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
