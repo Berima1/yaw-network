@@ -1,80 +1,33 @@
 {
   "version": 2,
   "name": "yaw-network-frontend",
-  "description": "African Blockchain Frontend - Ubuntu Technology",
-  "framework": "react",
-  
-  "functions": {
-    "server.js": {
-      "runtime": "@vercel/node",
-      "maxDuration": 30
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
     }
-  },
-  
+  ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/socket.io/(.*)",
-      "dest": "/server.js"
+      "src": "/static/(.*)",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/dist/$1",
-      "status": 200
+      "dest": "/frontend/$1"
     }
   ],
-  
   "env": {
-    "NODE_ENV": "production",
-    "BLOCKCHAIN_NETWORK": "african-mainnet",
-    "UBUNTU_MESSAGE": "I am because we are",
-    "SUPPORTED_COUNTRIES": "nigeria,kenya,ghana,south-africa,egypt"
+    "REACT_APP_API_URL": "@yaw-api-url",
+    "REACT_APP_NETWORK": "african-mainnet"
   },
-  
-  "build": {
-    "env": {
-      "REACT_APP_API_URL": "https://yaw-api.onrender.com",
-      "REACT_APP_WS_URL": "wss://yaw-api.onrender.com"
-    }
-  },
-  
-  "regions": ["iad1", "fra1", "hnd1", "sfo1"],
-  
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "X-Powered-By",
-          "value": "African-Innovation-Ubuntu-Technology"
-        },
-        {
-          "key": "X-Ubuntu-Message",
-          "value": "I am because we are"
-        }
-      ]
-    }
-  ],
-  
-  "redirects": [
-    {
-      "source": "/",
-      "destination": "/dashboard",
-      "permanent": false
-    }
-  ],
-  
-  "rewrites": [
-    {
-      "source": "/health",
-      "destination": "/api/health"
-    }
-  ]
+  "regions": ["iad1", "fra1", "hnd1"],
+  "github": {
+    "silent": true
+  }
 }
