@@ -1,0 +1,42 @@
+# YAW NETWORK - RAILWAY DEPLOYMENT CONFIGURATION
+# African Blockchain on Railway
+
+[build]
+builder = "nixpacks"
+buildCommand = "npm install && npm run build"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[env]
+NODE_ENV = "production"
+PORT = { default = "3000" }
+BLOCKCHAIN_NETWORK = "african-mainnet"
+CONSENSUS_ALGORITHM = "ubuntu-byzantine"
+UBUNTU_MESSAGE = "I am because we are - Ubuntu Technology"
+SUPPORTED_COUNTRIES = "nigeria,kenya,ghana,south-africa,egypt,morocco,ethiopia"
+AFRICAN_VALIDATOR_RATIO = "0.875"
+LOG_LEVEL = "info"
+
+# Railway-specific configurations
+[railway]
+project = "yaw-network"
+service = "yaw-api"
+
+# Custom domain
+[[railway.domains]]
+domain = "yaw.railway.app"
+
+# Resource limits
+[resources]
+memory = 1024
+cpu = 1000
+
+# Networking
+[networking]
+externalPort = 3000
+internalPort = 3000

@@ -1,0 +1,136 @@
+# YAW NETWORK - DOCKER COMPOSE CONFIGURATION
+# Complete African blockchain stack
+
+version: '3.8'
+
+networks:
+  ubuntu-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  yaw-data:
+  redis-data:
+  mongo-data:
+
+services:
+  # Main YAW Network API
+  yaw-api:
+    build: .
+    container_name: yaw-network-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - BLOCKCHAIN_NETWORK=african-mainnet
+      - CONSENSUS_ALGORITHM=ubuntu-byzantine
+      - UBUNTU_MESSAGE=I am because we are
+      - REDIS_URL=redis://yaw-redis:6379
+      - MONGODB_URI=mongodb://yaw-mongo:27017/yawnetwork
+    volumes:
+      - yaw-data:/app/data
+    networks:
+      - ubuntu-network
+    depends_on:
+      - yaw-redis
+      - yaw-mongo
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.yaw-api.rule=Host(`api.yawnetwork.org`)"
+      - "traefik.http.services.yaw-api.loadbalancer.server.port=3000"
+
+  # Redis Cache
+  yaw-redis:
+    image: redis:7-alpine
+    container_name: yaw-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - ubuntu-network
+    command: redis-server --appendonly yes --maxmemory 512mb
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MongoDB Database
+  yaw-mongo:
+    image: mongo:6
+    container_name: yaw-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ubuntu
+      MONGO_INITDB_ROOT_PASSWORD: yaw_ubuntu_2024
+      MONGO_INITDB_DATABASE: yawnetwork
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - ubuntu-network
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ismaster')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: yaw-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - ubuntu-network
+    depends_on:
+      - yaw-api
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: yaw-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - ubuntu-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: yaw-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=ubuntu_grafana_2024
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - ubuntu-network

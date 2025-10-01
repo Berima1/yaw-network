@@ -1,0 +1,80 @@
+{
+  "version": 2,
+  "name": "yaw-network-frontend",
+  "description": "African Blockchain Frontend - Ubuntu Technology",
+  "framework": "react",
+  
+  "functions": {
+    "server.js": {
+      "runtime": "@vercel/node",
+      "maxDuration": 30
+    }
+  },
+  
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/socket.io/(.*)",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/dist/$1",
+      "status": 200
+    }
+  ],
+  
+  "env": {
+    "NODE_ENV": "production",
+    "BLOCKCHAIN_NETWORK": "african-mainnet",
+    "UBUNTU_MESSAGE": "I am because we are",
+    "SUPPORTED_COUNTRIES": "nigeria,kenya,ghana,south-africa,egypt"
+  },
+  
+  "build": {
+    "env": {
+      "REACT_APP_API_URL": "https://yaw-api.onrender.com",
+      "REACT_APP_WS_URL": "wss://yaw-api.onrender.com"
+    }
+  },
+  
+  "regions": ["iad1", "fra1", "hnd1", "sfo1"],
+  
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "X-Powered-By",
+          "value": "African-Innovation-Ubuntu-Technology"
+        },
+        {
+          "key": "X-Ubuntu-Message",
+          "value": "I am because we are"
+        }
+      ]
+    }
+  ],
+  
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/dashboard",
+      "permanent": false
+    }
+  ],
+  
+  "rewrites": [
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    }
+  ]
+}
