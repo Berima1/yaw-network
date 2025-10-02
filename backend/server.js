@@ -11,7 +11,6 @@ const cors = require('cors');
 const compression = require('compression');
 const cluster = require('cluster');
 const os = require('os');
-const redis = require('redis');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { body, validationResult, param } = require('express-validator');
