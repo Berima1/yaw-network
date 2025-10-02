@@ -1,1087 +1,816 @@
-// YAW NETWORK - PRODUCTION BACKEND SERVER
-// African Blockchain Revolution - Built with Ubuntu Philosophy
-// High-performance Node.js API server optimized for African networks
+// YAW NETWORK - ENTERPRISE-GRADE API SERVER
+// High-performance REST API with WebSocket real-time updates
 
 const express = require('express');
 const http = require('http');
-const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
+const socketIo = require('socket.io');
 const rateLimit = require('express-rate-limit');
-const { Server } = require('socket.io');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+const helmet = require('helmet');
+const cors = require('cors');
+const compression = require('compression');
 const cluster = require('cluster');
 const os = require('os');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const { body, validationResult, param } = require('express-validator');
 
-// Environment Configuration
-const PORT = process.env.PORT || 3000;
-const NODE_ENV = process.env.NODE_ENV || 'production';
-const JWT_SECRET = process.env.JWT_SECRET || 'yaw_african_blockchain_secret_2024_ubuntu_power';
+// Import blockchain core
+const { YawBlockchain, QuantumResistantCrypto, ZKProofSystem } = require('./yaw-blockchain-core');
 
-// =================== AFRICAN BLOCKCHAIN CORE ===================
-class YawBlockchainCore {
-  constructor() {
-    this.chain = [];
-    this.pendingTransactions = [];
-    this.validators = new Map();
-    this.difficulty = 4;
-    this.blockTime = 15000; // 15 seconds
-    this.networkStats = this.initializeNetworkStats();
-    
-    // African validator nodes
-    this.africanValidators = {
-      'nigeria': { nodes: 25, hashrate: 2847000, stake: 15000000 },
-      'kenya': { nodes: 18, hashrate: 2103000, stake: 12000000 },
-      'ghana': { nodes: 15, hashrate: 1892000, stake: 10500000 },
-      'south-africa': { nodes: 22, hashrate: 2654000, stake: 14200000 },
-      'egypt': { nodes: 20, hashrate: 2340000, stake: 13100000 },
-      'morocco': { nodes: 12, hashrate: 1654000, stake: 9800000 },
-      'ethiopia': { nodes: 10, hashrate: 1420000, stake: 8500000 }
-    };
-    
-    this.createGenesisBlock();
-    this.startNetworkSimulation();
-    
-    console.log('🌍 YAW BLOCKCHAIN CORE INITIALIZED - AFRICAN POWER! 🚀');
-  }
-  
-  initializeNetworkStats() {
-    return {
-      height: 0,
-      difficulty: this.difficulty,
-      totalTransactions: 0,
-      pendingTransactions: 0,
-      totalValidators: 0,
-      tps: 0,
-      securityScore: 95.7,
-      decentralization: 92.3,
-      africaRepresentation: { percentage: 87.5 },
-      networkHash: { formatted: '15.7 EH/s' },
-      uptime: Date.now(),
-      lastBlockTime: Date.now()
-    };
-  }
-  
-  createGenesisBlock() {
-    const genesisBlock = {
-      height: 0,
-      timestamp: Date.now(),
-      previousHash: '0'.repeat(64),
-      transactions: [],
-      nonce: 0,
-      difficulty: this.difficulty,
-      validator: 'GENESIS-AFRICAN-VALIDATORS',
-      hash: this.calculateBlockHash({
-        height: 0,
-        timestamp: Date.now(),
-        previousHash: '0'.repeat(64),
-        transactions: [],
-        nonce: 0
-      }),
-      metadata: {
-        message: 'Ubuntu Genesis - African Blockchain Revolution Begins',
-        countries: Object.keys(this.africanValidators),
-        philosophy: 'I am because we are - Ubuntu Technology'
-      }
-    };
-    
-    this.chain.push(genesisBlock);
-    this.networkStats.height = 1;
-    console.log('🎉 Genesis block created - African blockchain is born!');
-  }
-  
-  calculateBlockHash(block) {
-    const blockString = `${block.height}${block.timestamp}${block.previousHash}${JSON.stringify(block.transactions)}${block.nonce}`;
-    return crypto.createHash('sha256').update(blockString).digest('hex');
-  }
-  
-  createTransaction(from, to, amount, data = {}) {
-    const transaction = {
-      id: crypto.randomBytes(32).toString('hex'),
-      from,
-      to,
-      amount: parseFloat(amount),
-      fee: this.calculateFee(amount),
-      timestamp: Date.now(),
-      data: data || {},
-      status: 'pending'
-    };
-    
-    this.pendingTransactions.push(transaction);
-    this.networkStats.pendingTransactions = this.pendingTransactions.length;
-    this.updateTPS();
-    
-    console.log(`💰 New transaction: ${amount} YAW from ${from.slice(0, 8)}... to ${to.slice(0, 8)}...`);
-    return transaction;
-  }
-  
-  mineBlock(validatorAddress) {
-    if (this.pendingTransactions.length === 0) {
-      throw new Error('No pending transactions to mine');
+// =================== ENTERPRISE CLUSTER SETUP ===================
+class YawClusterManager {
+    static initializeCluster() {
+        const numCPUs = os.cpus().length;
+        
+        if (cluster.isMaster) {
+            console.log(`Master process ${process.pid} started`);
+            console.log(`Spawning ${numCPUs} worker processes`);
+            
+            for (let i = 0; i < numCPUs; i++) {
+                cluster.fork();
+            }
+            
+            cluster.on('exit', (worker, code, signal) => {
+                console.log(`Worker ${worker.process.pid} died. Respawning...`);
+                cluster.fork();
+            });
+            
+            return false;
+        }
+        
+        return true;
     }
-    
-    const transactions = this.pendingTransactions.splice(0, Math.min(1000, this.pendingTransactions.length));
-    const previousBlock = this.getLatestBlock();
-    
-    const block = {
-      height: this.chain.length,
-      timestamp: Date.now(),
-      previousHash: previousBlock.hash,
-      transactions: transactions,
-      nonce: 0,
-      difficulty: this.difficulty,
-      validator: validatorAddress,
-      consensusRounds: Math.floor(Math.random() * 5) + 2, // 2-6 rounds for Ubuntu consensus
-      africaStake: this.calculateAfricanStakePercentage()
-    };
-    
-    // Simulate proof of work (simplified for demo)
-    const targetTime = Date.now() + Math.random() * 2000 + 1000; // 1-3 seconds
-    while (Date.now() < targetTime) {
-      block.nonce++;
-    }
-    
-    block.hash = this.calculateBlockHash(block);
-    this.chain.push(block);
-    
-    // Update network statistics
-    this.networkStats.height = this.chain.length;
-    this.networkStats.totalTransactions += transactions.length;
-    this.networkStats.pendingTransactions = this.pendingTransactions.length;
-    this.networkStats.lastBlockTime = Date.now();
-    this.updateTPS();
-    
-    console.log(`⛏️  Block #${block.height} mined by ${validatorAddress} with ${transactions.length} transactions`);
-    return block;
-  }
-  
-  calculateFee(amount) {
-    const baseRate = 0.001; // 0.1%
-    const networkLoad = this.pendingTransactions.length / 1000;
-    return amount * baseRate * (1 + networkLoad);
-  }
-  
-  calculateAfricanStakePercentage() {
-    const totalStake = Object.values(this.africanValidators).reduce((sum, country) => sum + country.stake, 0);
-    const africanStake = totalStake * 0.875; // 87.5% African representation
-    return (africanStake / totalStake) * 100;
-  }
-  
-  updateTPS() {
-    const recentBlocks = this.chain.slice(-10);
-    if (recentBlocks.length < 2) return;
-    
-    const totalTx = recentBlocks.reduce((sum, block) => sum + block.transactions.length, 0);
-    const timeSpan = recentBlocks[recentBlocks.length - 1].timestamp - recentBlocks[0].timestamp;
-    this.networkStats.tps = Math.round((totalTx / (timeSpan / 1000)) * 100) / 100;
-  }
-  
-  getLatestBlock() {
-    return this.chain[this.chain.length - 1];
-  }
-  
-  getBlockchainInfo() {
-    return {
-      ...this.networkStats,
-      totalBlocks: this.chain.length,
-      networkHashrate: this.calculateNetworkHashrate(),
-      validatorDistribution: this.getValidatorDistribution(),
-      consensusEfficiency: this.calculateConsensusEfficiency(),
-      features: [
-        'Quantum-resistant cryptography',
-        'Ubuntu Byzantine consensus',
-        'Zero-knowledge proofs',
-        'African geographic distribution',
-        'Mobile-optimized architecture'
-      ]
-    };
-  }
-  
-  calculateNetworkHashrate() {
-    const totalHashrate = Object.values(this.africanValidators).reduce((sum, country) => sum + country.hashrate, 0);
-    return {
-      total: totalHashrate,
-      formatted: this.formatHashrate(totalHashrate)
-    };
-  }
-  
-  formatHashrate(hashrate) {
-    if (hashrate >= 1e18) return (hashrate / 1e18).toFixed(1) + ' EH/s';
-    if (hashrate >= 1e15) return (hashrate / 1e15).toFixed(1) + ' PH/s';
-    if (hashrate >= 1e12) return (hashrate / 1e12).toFixed(1) + ' TH/s';
-    if (hashrate >= 1e9) return (hashrate / 1e9).toFixed(1) + ' GH/s';
-    if (hashrate >= 1e6) return (hashrate / 1e6).toFixed(1) + ' MH/s';
-    return hashrate.toLocaleString() + ' H/s';
-  }
-  
-  getValidatorDistribution() {
-    return Object.entries(this.africanValidators).map(([country, data]) => ({
-      country,
-      nodes: data.nodes,
-      hashrate: this.formatHashrate(data.hashrate),
-      stakePercentage: ((data.stake / Object.values(this.africanValidators).reduce((sum, c) => sum + c.stake, 0)) * 100).toFixed(1)
-    }));
-  }
-  
-  calculateConsensusEfficiency() {
-    const recentBlocks = this.chain.slice(-100);
-    if (recentBlocks.length < 10) return 98.5;
-    
-    const avgRounds = recentBlocks.reduce((sum, block) => sum + (block.consensusRounds || 3), 0) / recentBlocks.length;
-    return Math.max(85, 100 - (avgRounds - 2) * 3); // Efficiency decreases with more rounds
-  }
-  
-  startNetworkSimulation() {
-    // Simulate network activity every 30 seconds
-    setInterval(() => {
-      this.simulateNetworkActivity();
-    }, 30000);
-    
-    // Mine blocks every 15-20 seconds
-    setInterval(() => {
-      if (this.pendingTransactions.length > 0) {
-        const validators = Object.keys(this.africanValidators);
-        const randomValidator = validators[Math.floor(Math.random() * validators.length)];
-        this.mineBlock(`validator-${randomValidator}`);
-      }
-    }, 15000 + Math.random() * 5000);
-    
-    console.log('🔄 Network simulation started - Ubuntu consensus active!');
-  }
-  
-  simulateNetworkActivity() {
-    // Generate random transactions
-    const numTransactions = Math.floor(Math.random() * 10) + 5;
-    for (let i = 0; i < numTransactions; i++) {
-      const from = crypto.randomBytes(20).toString('hex');
-      const to = crypto.randomBytes(20).toString('hex');
-      const amount = Math.random() * 1000 + 10;
-      this.createTransaction(from, to, amount);
-    }
-    
-    // Update network statistics
-    this.networkStats.totalValidators = Object.values(this.africanValidators).reduce((sum, country) => sum + country.nodes, 0);
-    this.networkStats.uptime = Date.now() - this.networkStats.uptime;
-  }
 }
 
-// =================== WEBSOCKET MANAGER ===================
-class YawWebSocketManager {
-  constructor(io, blockchain) {
-    this.io = io;
-    this.blockchain = blockchain;
-    this.connectedClients = new Set();
-    this.subscriptions = new Map();
+// =================== REDIS CACHING LAYER ===================
+class YawCacheManager {
+    constructor() {
+        this.enabled = false;
+        this.cache = new Map(); // Fallback in-memory cache
+        
+        console.log('Cache manager initialized (in-memory mode)');
+    }
     
-    this.setupSocketHandlers();
-  }
-  
-  setupSocketHandlers() {
-    this.io.on('connection', (socket) => {
-      console.log(`🔗 Client connected: ${socket.id} (${this.connectedClients.size + 1} total)`);
-      this.connectedClients.add(socket.id);
-      
-      // Send welcome message with African greeting
-      socket.emit('welcome', {
-        message: '🌍 Sawubona! Welcome to Yaw Network - Ubuntu Blockchain!',
-        networkStats: this.blockchain.getBlockchainInfo(),
-        africanGreeting: this.getRandomAfricanGreeting(),
-        connectedNodes: this.connectedClients.size
-      });
-      
-      // Handle subscriptions
-      socket.on('subscribe', (data) => {
-        const { channel } = data;
-        if (!this.subscriptions.has(channel)) {
-          this.subscriptions.set(channel, new Set());
+    async get(key) {
+        return this.cache.get(`yaw:${key}`) || null;
+    }
+    
+    async set(key, value, expireSeconds = 3600) {
+        this.cache.set(`yaw:${key}`, value);
+        
+        // Auto-cleanup after expiration
+        setTimeout(() => {
+            this.cache.delete(`yaw:${key}`);
+        }, expireSeconds * 1000);
+        
+        return true;
+    }
+    
+    async del(key) {
+        this.cache.delete(`yaw:${key}`);
+        return true;
+    }
+}
+
+// =================== ADVANCED AUTHENTICATION ===================
+class YawAuthSystem {
+    constructor() {
+        this.jwtSecret = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+        this.refreshTokens = new Map();
+    }
+    
+    generateTokens(userId, publicKey) {
+        const payload = {
+            userId,
+            publicKey,
+            timestamp: Date.now(),
+            permissions: this.getUserPermissions(userId)
+        };
+        
+        const accessToken = jwt.sign(payload, this.jwtSecret, { 
+            expiresIn: '15m',
+            algorithm: 'HS512'
+        });
+        
+        const refreshToken = crypto.randomBytes(64).toString('hex');
+        
+        this.refreshTokens.set(refreshToken, {
+            userId,
+            createdAt: Date.now(),
+            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000)
+        });
+        
+        return { accessToken, refreshToken };
+    }
+    
+    verifyToken(token) {
+        try {
+            const decoded = jwt.verify(token, this.jwtSecret);
+            
+            if (decoded.timestamp + (15 * 60 * 1000) < Date.now()) {
+                throw new Error('Token expired');
+            }
+            
+            return decoded;
+        } catch (error) {
+            throw new Error('Invalid token');
         }
+    }
+    
+    refreshAccessToken(refreshToken) {
+        const tokenData = this.refreshTokens.get(refreshToken);
+        
+        if (!tokenData || tokenData.expiresAt < Date.now()) {
+            throw new Error('Invalid or expired refresh token');
+        }
+        
+        const newTokens = this.generateTokens(tokenData.userId);
+        this.refreshTokens.delete(refreshToken);
+        
+        return newTokens;
+    }
+    
+    getUserPermissions(userId) {
+        return [
+            'wallet:read',
+            'wallet:write',
+            'transactions:create',
+            'transactions:read',
+            'mining:participate',
+            'analytics:basic'
+        ];
+    }
+    
+    generateAPIKey(userId) {
+        const apiKeyData = {
+            userId,
+            createdAt: Date.now(),
+            permissions: ['api:read', 'api:write']
+        };
+        
+        const apiKey = 'yaw_' + crypto.randomBytes(32).toString('hex');
+        const hashedKey = crypto.createHash('sha256').update(apiKey).digest('hex');
+        
+        return { apiKey, hashedKey, data: apiKeyData };
+    }
+}
+
+// =================== WEBSOCKET REAL-TIME MANAGER ===================
+class YawRealtimeManager {
+    constructor(io, blockchain) {
+        this.io = io;
+        this.blockchain = blockchain;
+        this.connectedClients = new Map();
+        this.subscriptions = new Map();
+        
+        this.setupSocketHandlers();
+    }
+    
+    setupSocketHandlers() {
+        this.io.on('connection', (socket) => {
+            console.log(`Client connected: ${socket.id}`);
+            
+            this.connectedClients.set(socket.id, {
+                connectedAt: Date.now(),
+                subscriptions: new Set()
+            });
+            
+            socket.on('subscribe', (data) => {
+                this.handleSubscription(socket, data);
+            });
+            
+            socket.on('unsubscribe', (data) => {
+                this.handleUnsubscription(socket, data);
+            });
+            
+            socket.on('disconnect', () => {
+                console.log(`Client disconnected: ${socket.id}`);
+                this.cleanupClient(socket.id);
+            });
+            
+            socket.emit('welcome', {
+                message: 'Welcome to Yaw Network',
+                networkStats: this.getNetworkStats()
+            });
+        });
+    }
+    
+    handleSubscription(socket, data) {
+        const { channel } = data;
+        
+        if (!this.subscriptions.has(channel)) {
+            this.subscriptions.set(channel, new Set());
+        }
+        
         this.subscriptions.get(channel).add(socket.id);
+        this.connectedClients.get(socket.id).subscriptions.add(channel);
         
         socket.emit('subscribed', { channel, status: 'success' });
         this.sendInitialData(socket, channel);
-      });
-      
-      socket.on('unsubscribe', (data) => {
+    }
+    
+    handleUnsubscription(socket, data) {
         const { channel } = data;
+        
         if (this.subscriptions.has(channel)) {
-          this.subscriptions.get(channel).delete(socket.id);
+            this.subscriptions.get(channel).delete(socket.id);
         }
+        
+        if (this.connectedClients.has(socket.id)) {
+            this.connectedClients.get(socket.id).subscriptions.delete(channel);
+        }
+        
         socket.emit('unsubscribed', { channel, status: 'success' });
-      });
-      
-      socket.on('disconnect', () => {
-        console.log(`❌ Client disconnected: ${socket.id}`);
-        this.connectedClients.delete(socket.id);
-        this.cleanupSubscriptions(socket.id);
-      });
-    });
-  }
-  
-  getRandomAfricanGreeting() {
-    const greetings = [
-      { language: 'Swahili', greeting: 'Hujambo!', meaning: 'Hello!' },
-      { language: 'Yoruba', greeting: 'Bawo!', meaning: 'How are you!' },
-      { language: 'Zulu', greeting: 'Sawubona!', meaning: 'We see you!' },
-      { language: 'Amharic', greeting: 'Selam!', meaning: 'Peace!' },
-      { language: 'Hausa', greeting: 'Sannu!', meaning: 'Hello!' },
-      { language: 'Akan', greeting: 'Akwaaba!', meaning: 'Welcome!' }
-    ];
-    return greetings[Math.floor(Math.random() * greetings.length)];
-  }
-  
-  sendInitialData(socket, channel) {
-    const blockchainInfo = this.blockchain.getBlockchainInfo();
-    
-    switch (channel) {
-      case 'blocks':
-        socket.emit('blocks', {
-          latestBlock: this.blockchain.getLatestBlock(),
-          chainHeight: blockchainInfo.height
-        });
-        break;
-      case 'transactions':
-        socket.emit('transactions', {
-          pending: this.blockchain.pendingTransactions.slice(-10),
-          pendingCount: blockchainInfo.pendingTransactions
-        });
-        break;
-      case 'analytics':
-        socket.emit('analytics', blockchainInfo);
-        break;
-      case 'mining':
-        socket.emit('mining', {
-          difficulty: blockchainInfo.difficulty,
-          pendingTransactions: blockchainInfo.pendingTransactions,
-          validators: blockchainInfo.validatorDistribution
-        });
-        break;
     }
-  }
-  
-  broadcastNewBlock(block) {
-    this.broadcast('blocks', 'newBlock', {
-      block,
-      chainHeight: this.blockchain.chain.length,
-      timestamp: Date.now(),
-      africanValidator: block.validator.includes('africa') || block.validator.includes('validator')
-    });
-  }
-  
-  broadcastNewTransaction(transaction) {
-    this.broadcast('transactions', 'newTransaction', {
-      transaction,
-      pendingCount: this.blockchain.pendingTransactions.length,
-      timestamp: Date.now()
-    });
-  }
-  
-  broadcastAnalyticsUpdate() {
-    this.broadcast('analytics', 'analyticsUpdate', {
-      analytics: this.blockchain.getBlockchainInfo(),
-      timestamp: Date.now()
-    });
-  }
-  
-  broadcast(channel, event, data) {
-    if (this.subscriptions.has(channel)) {
-      for (const socketId of this.subscriptions.get(channel)) {
-        const socket = this.io.sockets.sockets.get(socketId);
-        if (socket) {
-          socket.emit(event, data);
+    
+    sendInitialData(socket, channel) {
+        switch (channel) {
+            case 'blocks':
+                socket.emit('blocks', {
+                    latestBlock: this.blockchain.getLatestBlock(),
+                    chainHeight: this.blockchain.chain.length
+                });
+                break;
+            
+            case 'transactions':
+                socket.emit('transactions', {
+                    pending: this.blockchain.pendingTransactions.slice(-10)
+                });
+                break;
+            
+            case 'analytics':
+                socket.emit('analytics', this.blockchain.getBlockchainAnalytics());
+                break;
         }
-      }
     }
-  }
-  
-  cleanupSubscriptions(socketId) {
-    for (const subscribers of this.subscriptions.values()) {
-      subscribers.delete(socketId);
+    
+    broadcastNewBlock(block) {
+        this.broadcast('blocks', 'newBlock', {
+            block,
+            chainHeight: this.blockchain.chain.length,
+            timestamp: Date.now()
+        });
     }
-  }
-}
-
-// =================== AUTHENTICATION MIDDLEWARE ===================
-class YawAuthManager {
-  constructor() {
-    this.jwtSecret = JWT_SECRET;
-    this.africanCountries = [
-      'nigeria', 'kenya', 'ghana', 'south-africa', 'egypt', 
-      'morocco', 'ethiopia', 'uganda', 'senegal', 'rwanda'
-    ];
-  }
-  
-  generateToken(userId, country = 'nigeria') {
-    const payload = {
-      userId,
-      country,
-      timestamp: Date.now(),
-      permissions: ['mining', 'transactions', 'analytics'],
-      africanNode: this.africanCountries.includes(country.toLowerCase())
-    };
     
-    return jwt.sign(payload, this.jwtSecret, { 
-      expiresIn: '24h',
-      algorithm: 'HS256'
-    });
-  }
-  
-  verifyToken(token) {
-    try {
-      return jwt.verify(token, this.jwtSecret);
-    } catch (error) {
-      throw new Error('Invalid or expired token');
+    broadcastNewTransaction(transaction) {
+        this.broadcast('transactions', 'newTransaction', {
+            transaction,
+            pendingCount: this.blockchain.pendingTransactions.length,
+            timestamp: Date.now()
+        });
     }
-  }
-  
-  middleware() {
-    return (req, res, next) => {
-      const authHeader = req.headers.authorization;
-      const token = authHeader && authHeader.split(' ')[1];
-      
-      if (!token) {
-        return res.status(401).json({
-          error: 'Access token required',
-          message: 'Ubuntu requires authentication - please provide token'
+    
+    broadcastAnalyticsUpdate() {
+        this.broadcast('analytics', 'analyticsUpdate', {
+            analytics: this.blockchain.getBlockchainAnalytics(),
+            timestamp: Date.now()
         });
-      }
-      
-      try {
-        const decoded = this.verifyToken(token);
-        req.user = decoded;
-        next();
-      } catch (error) {
-        return res.status(403).json({
-          error: 'Invalid token',
-          message: error.message
-        });
-      }
-    };
-  }
-}
-
-// =================== MAIN SERVER APPLICATION ===================
-class YawNetworkServer {
-  constructor() {
-    this.app = express();
-    this.server = http.createServer(this.app);
-    this.io = new Server(this.server, {
-      cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-        credentials: true
-      },
-      transports: ['websocket', 'polling'] // Support for African networks
-    });
+    }
     
-    // Initialize core systems
-    this.blockchain = new YawBlockchainCore();
-    this.auth = new YawAuthManager();
-    this.websocket = new YawWebSocketManager(this.io, this.blockchain);
-    
-    this.setupMiddleware();
-    this.setupRoutes();
-    this.startPerformanceMonitoring();
-    
-    console.log('🌍 YAW NETWORK SERVER INITIALIZED - READY FOR AFRICAN BLOCKCHAIN REVOLUTION!');
-  }
-  
-  setupMiddleware() {
-    // Security middleware optimized for African networks
-    this.app.use(helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'"],
-          imgSrc: ["'self'", "data:", "https:"],
-        }
-      },
-      crossOriginEmbedderPolicy: false // Better compatibility for African networks
-    }));
-    
-    // CORS configuration for global access
-    this.app.use(cors({
-      origin: [
-        'http://localhost:3000',
-        'http://localhost:5173',
-        'https://yaw-network.vercel.app',
-        'https://yawnetwork.org',
-        /\.vercel\.app$/,
-        /\.netlify\.app$/,
-        /\.onrender\.com$/
-      ],
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-    }));
-    
-    // Compression for faster loading in Africa
-    this.app.use(compression({
-      level: 6,
-      threshold: 1000,
-      filter: (req, res) => {
-        if (req.headers['x-no-compression']) return false;
-        return compression.filter(req, res);
-      }
-    }));
-    
-    // Body parsing with increased limits for African networks
-    this.app.use(express.json({ 
-      limit: '10mb',
-      verify: (req, res, buf) => {
-        req.rawBody = buf;
-      }
-    }));
-    this.app.use(express.urlencoded({ 
-      extended: true, 
-      limit: '10mb' 
-    }));
-    
-    // Rate limiting - generous for African connectivity
-    const limiter = rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 2000, // Higher limit for intermittent connectivity
-      message: {
-        error: 'Too many requests from Africa - Ubuntu patience please! 🌍',
-        retryAfter: '15 minutes',
-        ubuntu: 'I am because we are - try again soon!'
-      },
-      standardHeaders: true,
-      legacyHeaders: false,
-      skip: (req) => {
-        // Skip rate limiting for health checks and African development IPs
-        return req.path === '/health' || req.path === '/api/blockchain/info';
-      }
-    });
-    
-    this.app.use('/api/', limiter);
-    
-    // Request logging with African flair
-    this.app.use((req, res, next) => {
-      const start = Date.now();
-      const africanTime = new Date().toLocaleString('en-US', { timeZone: 'Africa/Lagos' });
-      
-      res.on('finish', () => {
-        const duration = Date.now() - start;
-        console.log(`${req.method} ${req.path} - ${res.statusCode} (${duration}ms) [African Time: ${africanTime}]`);
-      });
-      
-      next();
-    });
-  }
-  
-  setupRoutes() {
-    // Health check with African pride
-    this.app.get('/health', (req, res) => {
-      res.json({
-        status: 'Ubuntu Strong! 💪',
-        uptime: process.uptime(),
-        timestamp: Date.now(),
-        africanTime: new Date().toLocaleString('en-US', { timeZone: 'Africa/Lagos' }),
-        blockchain: {
-          height: this.blockchain.networkStats.height,
-          pendingTx: this.blockchain.networkStats.pendingTransactions,
-          tps: this.blockchain.networkStats.tps
-        },
-        server: {
-          memory: process.memoryUsage(),
-          cpu: process.cpuUsage(),
-          nodeVersion: process.version,
-          platform: process.platform
-        },
-        message: '🌍 African blockchain is healthy and strong!',
-        ubuntu: 'I am because we are - Ubuntu technology!'
-      });
-    });
-    
-    // Blockchain information endpoint
-    this.app.get('/api/blockchain/info', (req, res) => {
-      try {
-        const info = this.blockchain.getBlockchainInfo();
-        res.json({
-          success: true,
-          data: {
-            ...info,
-            message: '🌍 Welcome to African blockchain revolution!',
-            ubuntu: 'Ubuntu technology - built with collective wisdom',
-            features: info.features,
-            africaFirst: true
-          },
-          timestamp: Date.now()
-        });
-      } catch (error) {
-        res.status(500).json({
-          success: false,
-          error: 'Failed to fetch blockchain info',
-          message: error.message,
-          ubuntu: 'Even Ubuntu faces challenges - we will overcome!'
-        });
-      }
-    });
-    
-    // Authentication endpoints
-    this.app.post('/api/auth/connect', (req, res) => {
-      try {
-        const { walletAddress, country = 'nigeria', signature } = req.body;
-        
-        if (!walletAddress) {
-          return res.status(400).json({
-            success: false,
-            error: 'Wallet address required',
-            message: 'Ubuntu requires identity - please provide wallet address'
-          });
-        }
-        
-        const userId = crypto.createHash('sha256').update(walletAddress).digest('hex').slice(0, 16);
-        const token = this.auth.generateToken(userId, country);
-        
-        res.json({
-          success: true,
-          data: {
-            token,
-            userId,
-            country,
-            africanNode: this.auth.africanCountries.includes(country.toLowerCase()),
-            expiresIn: '24h'
-          },
-          message: `🌍 Ubuntu welcome from ${country}! Connected to African blockchain!`,
-          greeting: this.websocket.getRandomAfricanGreeting()
-        });
-        
-      } catch (error) {
-        res.status(500).json({
-          success: false,
-          error: 'Authentication failed',
-          message: error.message
-        });
-      }
-    });
-    
-    // Transaction creation endpoint
-    this.app.post('/api/transactions/create', this.auth.middleware(), (req, res) => {
-      try {
-        const { to, amount, data } = req.body;
-        const from = req.user.userId;
-        
-        if (!to || !amount || amount <= 0) {
-          return res.status(400).json({
-            success: false,
-            error: 'Invalid transaction parameters',
-            message: 'Ubuntu requires valid recipient and amount'
-          });
-        }
-        
-        const transaction = this.blockchain.createTransaction(from, to, amount, data);
-        
-        // Broadcast to WebSocket clients
-        this.websocket.broadcastNewTransaction(transaction);
-        
-        res.json({
-          success: true,
-          data: {
-            transactionId: transaction.id,
-            from: transaction.from,
-            to: transaction.to,
-            amount: transaction.amount,
-            fee: transaction.fee,
-            status: transaction.status,
-            estimatedConfirmation: '15-30 seconds'
-          },
-          message: '💰 Ubuntu transaction created! African speed and efficiency!',
-          africaFirst: true
-        });
-        
-      } catch (error) {
-        res.status(400).json({
-          success: false,
-          error: 'Transaction creation failed',
-          message: error.message,
-          ubuntu: 'Ubuntu learns from failures - try again!'
-        });
-      }
-    });
-    
-    // Get transaction status
-    this.app.get('/api/transactions/:txId', (req, res) => {
-      try {
-        const { txId } = req.params;
-        
-        // Check pending transactions first
-        const pendingTx = this.blockchain.pendingTransactions.find(tx => tx.id === txId);
-        if (pendingTx) {
-          return res.json({
-            success: true,
-            data: {
-              ...pendingTx,
-              status: 'pending',
-              confirmations: 0,
-              message: 'Ubuntu consensus in progress...'
+    broadcast(channel, event, data) {
+        if (this.subscriptions.has(channel)) {
+            for (const socketId of this.subscriptions.get(channel)) {
+                const socket = this.io.sockets.sockets.get(socketId);
+                if (socket) {
+                    socket.emit(event, data);
+                }
             }
-          });
         }
-        
-        // Search in blockchain
-        for (let i = this.blockchain.chain.length - 1; i >= 0; i--) {
-          const block = this.blockchain.chain[i];
-          const tx = block.transactions.find(t => t.id === txId);
-          
-          if (tx) {
-            return res.json({
-              success: true,
-              data: {
-                ...tx,
-                status: 'confirmed',
-                confirmations: this.blockchain.chain.length - i,
-                blockHeight: i,
-                blockHash: block.hash,
-                validator: block.validator,
-                message: '✅ Ubuntu consensus achieved!'
-              }
-            });
-          }
-        }
-        
-        res.status(404).json({
-          success: false,
-          error: 'Transaction not found',
-          message: 'Ubuntu cannot find this transaction',
-          suggestion: 'Check transaction ID or wait for network sync'
-        });
-        
-      } catch (error) {
-        res.status(500).json({
-          success: false,
-          error: 'Failed to fetch transaction',
-          message: error.message
-        });
-      }
-    });
+    }
     
-    // Mining endpoint for validators
-    this.app.post('/api/mining/mine', this.auth.middleware(), (req, res) => {
-      try {
-        const { validatorId = `validator-${req.user.country}` } = req.body;
-        
-        if (this.blockchain.pendingTransactions.length === 0) {
-          return res.status(400).json({
-            success: false,
-            error: 'No transactions to mine',
-            message: 'Ubuntu patience - wait for transactions',
-            suggestion: 'Try again when there are pending transactions'
-          });
+    cleanupClient(socketId) {
+        for (const [channel, subscribers] of this.subscriptions) {
+            subscribers.delete(socketId);
         }
-        
-        const block = this.blockchain.mineBlock(validatorId);
-        
-        // Broadcast to WebSocket clients
-        this.websocket.broadcastNewBlock(block);
-        
-        res.json({
-          success: true,
-          data: {
-            blockHeight: block.height,
-            blockHash: block.hash,
-            transactions: block.transactions.length,
-            validator: block.validator,
-            consensusRounds: block.consensusRounds,
-            africaStake: block.africaStake,
-            timestamp: block.timestamp
-          },
-          message: `🎉 Ubuntu consensus achieved! Block #${block.height} mined by African validator!`,
-          ubuntu: 'I am because we are - collective mining success!'
-        });
-        
-      } catch (error) {
-        res.status(400).json({
-          success: false,
-          error: 'Mining failed',
-          message: error.message,
-          ubuntu: 'Ubuntu learns from challenges'
-        });
-      }
-    });
+        this.connectedClients.delete(socketId);
+    }
     
-    // Network analytics endpoint
-    this.app.get('/api/analytics', (req, res) => {
-      try {
-        const analytics = this.blockchain.getBlockchainInfo();
-        const serverStats = {
-          uptime: process.uptime(),
-          memory: process.memoryUsage(),
-          connections: this.websocket.connectedClients.size,
-          africanTime: new Date().toLocaleString('en-US', { timeZone: 'Africa/Lagos' })
+    getNetworkStats() {
+        return {
+            connectedClients: this.connectedClients.size,
+            activeSubscriptions: Array.from(this.subscriptions.keys()),
+            uptime: process.uptime(),
+            timestamp: Date.now()
         };
+    }
+}
+
+// =================== SMART CONTRACT ENGINE ===================
+class YawSmartContractEngine {
+    constructor(blockchain) {
+        this.blockchain = blockchain;
+        this.contracts = new Map();
+        this.contractTemplates = new Map();
         
-        res.json({
-          success: true,
-          data: {
-            blockchain: analytics,
-            server: serverStats,
-            realtime: {
-              connectedClients: this.websocket.connectedClients.size,
-              activeSubscriptions: this.websocket.subscriptions.size
+        this.initializeContractTemplates();
+    }
+    
+    initializeContractTemplates() {
+        this.contractTemplates.set('YAW-TOKEN', {
+            name: 'Yaw Token Contract',
+            version: '1.0.0',
+            functions: ['transfer', 'approve', 'mint', 'burn', 'balanceOf'],
+            storage: ['balances', 'allowances', 'totalSupply', 'owner']
+        });
+        
+        this.contractTemplates.set('YAW-MULTISIG', {
+            name: 'Multi-Signature Wallet',
+            version: '1.0.0',
+            functions: ['submitTransaction', 'confirmTransaction', 'executeTransaction'],
+            storage: ['owners', 'required', 'transactions', 'confirmations']
+        });
+    }
+    
+    async deployContract(contractType, params, deployerAddress) {
+        try {
+            if (!this.contractTemplates.has(contractType)) {
+                throw new Error(`Contract template ${contractType} not found`);
+            }
+            
+            const template = this.contractTemplates.get(contractType);
+            const contractAddress = this.generateContractAddress(deployerAddress, Date.now());
+            
+            const contract = {
+                address: contractAddress,
+                type: contractType,
+                template: template,
+                owner: deployerAddress,
+                storage: this.initializeContractStorage(template, params),
+                deployedAt: Date.now(),
+                version: template.version,
+                params: params
+            };
+            
+            this.contracts.set(contractAddress, contract);
+            
+            console.log(`Contract deployed: ${contractType} at ${contractAddress}`);
+            
+            return {
+                contractAddress,
+                contract: contract
+            };
+            
+        } catch (error) {
+            throw new Error(`Contract deployment failed: ${error.message}`);
+        }
+    }
+    
+    generateContractAddress(deployerAddress, timestamp) {
+        const data = `${deployerAddress}-${timestamp}`;
+        const hash = crypto.createHash('sha256').update(data).digest('hex');
+        return '0x' + hash.slice(0, 40);
+    }
+    
+    initializeContractStorage(template, params) {
+        const storage = {};
+        
+        template.storage.forEach(key => {
+            switch (key) {
+                case 'balances':
+                    storage[key] = {};
+                    break;
+                case 'totalSupply':
+                    storage[key] = params.initialSupply || 0;
+                    break;
+                case 'owners':
+                    storage[key] = params.owners || [];
+                    break;
+                case 'required':
+                    storage[key] = params.required || 2;
+                    break;
+                default:
+                    storage[key] = params[key] || null;
+            }
+        });
+        
+        return storage;
+    }
+    
+    getContract(address) {
+        return this.contracts.get(address);
+    }
+    
+    getAllContracts() {
+        return Array.from(this.contracts.values());
+    }
+}
+
+// =================== MAIN API SERVER CLASS ===================
+class YawAPIServer {
+    constructor() {
+        this.app = express();
+        this.server = http.createServer(this.app);
+        this.io = socketIo(this.server, {
+            cors: {
+                origin: "*",
+                methods: ["GET", "POST"]
+            }
+        });
+        
+        this.blockchain = new YawBlockchain();
+        this.cache = new YawCacheManager();
+        this.auth = new YawAuthSystem();
+        this.realtime = new YawRealtimeManager(this.io, this.blockchain);
+        
+        this.port = process.env.PORT || 3000;
+        this.setupMiddleware();
+        this.setupRoutes();
+        this.startPerformanceMonitoring();
+    }
+    
+    setupMiddleware() {
+        this.app.use(helmet({
+            contentSecurityPolicy: {
+                directives: {
+                    defaultSrc: ["'self'"],
+                    styleSrc: ["'self'", "'unsafe-inline'"],
+                    scriptSrc: ["'self'"],
+                    imgSrc: ["'self'", "data:", "https:"],
+                }
+            }
+        }));
+        
+        this.app.use(cors({
+            origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+            credentials: true
+        }));
+        
+        this.app.use(compression());
+        this.app.use(express.json({ limit: '10mb' }));
+        this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+        
+        const limiter = rateLimit({
+            windowMs: 15 * 60 * 1000,
+            max: 1000,
+            message: {
+                error: 'Too many requests, please try again later',
+                retryAfter: '15 minutes'
             },
-            africaMetrics: {
-              representation: analytics.africaRepresentation,
-              validators: analytics.validatorDistribution,
-              consensusEfficiency: analytics.consensusEfficiency
-            }
-          },
-          message: '📊 Ubuntu analytics - transparency through technology!',
-          ubuntu: 'Collective intelligence for collective progress'
+            standardHeaders: true,
+            legacyHeaders: false
         });
         
-      } catch (error) {
-        res.status(500).json({
-          success: false,
-          error: 'Failed to fetch analytics',
-          message: error.message
+        this.app.use('/api/', limiter);
+        
+        this.app.use((req, res, next) => {
+            const start = Date.now();
+            res.on('finish', () => {
+                const duration = Date.now() - start;
+                console.log(`${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
+            });
+            next();
         });
-      }
-    });
+    }
     
-    // Get specific block
-    this.app.get('/api/blocks/:height', (req, res) => {
-      try {
-        const height = parseInt(req.params.height);
+    setupRoutes() {
+        this.app.get('/health', (req, res) => {
+            res.json({
+                status: 'healthy',
+                uptime: process.uptime(),
+                blockchain: {
+                    height: this.blockchain.chain.length,
+                    difficulty: this.blockchain.difficulty,
+                    pending: this.blockchain.pendingTransactions.length
+                },
+                server: {
+                    memory: process.memoryUsage(),
+                    cpu: process.cpuUsage(),
+                    version: '1.0.0'
+                }
+            });
+        });
         
-        if (isNaN(height) || height < 0 || height >= this.blockchain.chain.length) {
-          return res.status(404).json({
-            success: false,
-            error: 'Block not found',
-            message: `Ubuntu cannot find block #${height}`,
-            maxHeight: this.blockchain.chain.length - 1
-          });
+        this.app.get('/api/blockchain/info', async (req, res) => {
+            try {
+                const cacheKey = 'blockchain:info';
+                let info = await this.cache.get(cacheKey);
+                
+                if (!info) {
+                    info = {
+                        height: this.blockchain.chain.length,
+                        difficulty: this.blockchain.difficulty,
+                        totalTransactions: this.blockchain.chain.reduce((sum, block) => 
+                            sum + block.transactions.length, 0),
+                        validators: this.blockchain.validators.size,
+                        latestBlock: this.blockchain.getLatestBlock(),
+                        features: [
+                            'Quantum-resistant cryptography',
+                            'Zero-knowledge proofs',
+                            'Ubuntu consensus algorithm',
+                            'Smart contracts'
+                        ]
+                    };
+                    
+                    await this.cache.set(cacheKey, info, 30);
+                }
+                
+                res.json({
+                    success: true,
+                    data: info
+                });
+                
+            } catch (error) {
+                res.status(500).json({
+                    error: 'Failed to fetch blockchain info',
+                    message: error.message
+                });
+            }
+        });
+        
+        this.app.post('/api/auth/register', [
+            body('publicKey').isLength({ min: 64 }).withMessage('Valid public key required'),
+            body('country').isIn(['nigeria', 'kenya', 'ghana', 'south-africa', 'egypt', 'morocco', 'ethiopia'])
+        ], async (req, res) => {
+            try {
+                const errors = validationResult(req);
+                if (!errors.isEmpty()) {
+                    return res.status(400).json({ errors: errors.array() });
+                }
+                
+                const { publicKey, country } = req.body;
+                const userId = crypto.createHash('sha256').update(publicKey).digest('hex').slice(0, 16);
+                const tokens = this.auth.generateTokens(userId, publicKey);
+                
+                await this.cache.set(`user:${userId}`, {
+                    publicKey,
+                    country,
+                    registeredAt: Date.now()
+                }, 86400);
+                
+                res.json({
+                    success: true,
+                    userId,
+                    tokens,
+                    country
+                });
+                
+            } catch (error) {
+                res.status(500).json({
+                    error: 'Registration failed',
+                    message: error.message
+                });
+            }
+        });
+        
+        this.app.use('*', (req, res) => {
+            res.status(404).json({
+                error: 'Endpoint not found',
+                availableEndpoints: [
+                    'GET /health',
+                    'GET /api/blockchain/info',
+                    'POST /api/auth/register'
+                ]
+            });
+        });
+        
+        this.app.use((err, req, res, next) => {
+            console.error('Server error:', err);
+            
+            res.status(err.status || 500).json({
+                error: 'Internal server error',
+                message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
+                timestamp: Date.now()
+            });
+        });
+    }
+    
+    authenticateToken(req, res, next) {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        
+        if (!token) {
+            return res.status(401).json({
+                error: 'Access token required'
+            });
         }
         
-        const block = this.blockchain.chain[height];
-        res.json({
-          success: true,
-          data: {
-            ...block,
-            confirmations: this.blockchain.chain.length - height,
-            nextBlock: height + 1 < this.blockchain.chain.length ? height + 1 : null,
-            previousBlock: height > 0 ? height - 1 : null
-          },
-          message: `🧱 Ubuntu block #${height} - secured by African consensus!`
-        });
-        
-      } catch (error) {
-        res.status(500).json({
-          success: false,
-          error: 'Failed to fetch block',
-          message: error.message
-        });
-      }
-    });
+        try {
+            const user = this.auth.verifyToken(token);
+            req.user = user;
+            next();
+        } catch (error) {
+            return res.status(403).json({
+                error: 'Invalid token',
+                message: error.message
+            });
+        }
+    }
     
-    // Address balance and transactions
-    this.app.get('/api/address/:address', (req, res) => {
-      try {
-        const { address } = req.params;
-        let balance = 0;
-        const transactions = [];
-        
-        // Calculate balance and collect transactions
-        for (const block of this.blockchain.chain) {
-          for (const tx of block.transactions) {
-            if (tx.from === address || tx.to === address) {
-              transactions.push({
-                ...tx,
-                blockHeight: block.height,
-                blockHash: block.hash,
-                confirmations: this.blockchain.chain.length - block.height,
-                type: tx.from === address ? 'sent' : 'received'
-              });
-              
-              if (tx.to === address) balance += tx.amount;
-              if (tx.from === address) balance -= (tx.amount + tx.fee);
+    startPerformanceMonitoring() {
+        setInterval(() => {
+            const stats = {
+                timestamp: Date.now(),
+                memory: process.memoryUsage(),
+                blockchain: {
+                    height: this.blockchain.chain.length,
+                    pending: this.blockchain.pendingTransactions.length
+                }
+            };
+            
+            this.cache.set('performance:latest', stats, 300);
+            
+            const memUsage = stats.memory.heapUsed / stats.memory.heapTotal;
+            if (memUsage > 0.9) {
+                console.warn('High memory usage:', (memUsage * 100).toFixed(1) + '%');
             }
-          }
+            
+        }, 30000);
+        
+        setInterval(() => {
+            this.realtime.broadcastAnalyticsUpdate();
+        }, 60000);
+    }
+    
+    start() {
+        this.server.listen(this.port, () => {
+            console.log('\nYAW NETWORK API SERVER STARTED');
+            console.log('================================================');
+            console.log(`Server running on port ${this.port}`);
+            console.log(`Process ID: ${process.pid}`);
+            console.log(`Validators: ${this.blockchain.validators.size} nodes`);
+            console.log('Ready to serve requests');
+            console.log('================================================\n');
+        });
+        
+        process.on('SIGTERM', () => {
+            console.log('SIGTERM received, shutting down gracefully...');
+            this.server.close(() => {
+                console.log('Server shut down complete');
+                process.exit(0);
+            });
+        });
+        
+        process.on('SIGINT', () => {
+            console.log('\nSIGINT received, shutting down gracefully...');
+            this.server.close(() => {
+                console.log('Server shut down complete');
+                process.exit(0);
+            });
+        });
+    }
+}
+
+// =================== DEMONSTRATION FUNCTION (FIXED) ===================
+async function demonstrateYawBlockchain(yawChain) {
+    console.log('\n📊 BLOCKCHAIN PERFORMANCE DEMONSTRATION\n');
+    
+    try {
+        // Generate keys
+        const aliceKeys = yawChain.generateECDSAKeys();
+        const bobKeys = yawChain.generateECDSAKeys();
+        const charlieKeys = yawChain.generateECDSAKeys();
+        
+        const aliceAddr = aliceKeys.publicKey.slice(0, 40);
+        const bobAddr = bobKeys.publicKey.slice(0, 40);
+        const charlieAddr = charlieKeys.publicKey.slice(0, 40);
+        
+        console.log('Creating initial transactions...');
+        
+        // Create transactions with proper balance parameter
+        for (let i = 0; i < 5; i++) {
+            const amount = 100 + (i * 50);
+            
+            await yawChain.createTransaction(
+                aliceAddr,
+                bobAddr,
+                amount,
+                aliceKeys.privateKey,
+                {
+                    private: i % 2 === 0,
+                    fee: amount * 0.002,
+                    balance: 10000 // Provide balance for validation
+                }
+            );
         }
         
-        // Sort transactions by newest first
-        transactions.sort((a, b) => b.timestamp - a.timestamp);
+        console.log('Mining first block...');
+        const block1 = await yawChain.mineBlock('validator-lagos');
+        console.log(`Block #${block1.height} mined successfully`);
         
-        res.json({
-          success: true,
-          data: {
-            address,
-            balance: Math.max(0, balance),
-            transactionCount: transactions.length,
-            transactions: transactions.slice(0, 50), // Latest 50 transactions
-            ubuntu: balance > 0 ? 'Ubuntu wealth grows with community!' : 'Ubuntu supports all members!'
-          },
-          message: `💼 Ubuntu wallet for ${address.slice(0, 8)}...${address.slice(-8)}`
+        // Create more transactions
+        for (let i = 0; i < 3; i++) {
+            const amount = 50 + (i * 25);
+            
+            await yawChain.createTransaction(
+                bobAddr,
+                charlieAddr,
+                amount,
+                bobKeys.privateKey,
+                {
+                    fee: amount * 0.002,
+                    balance: 5000
+                }
+            );
+        }
+        
+        console.log('Mining second block...');
+        const block2 = await yawChain.mineBlock('validator-nairobi');
+        console.log(`Block #${block2.height} mined successfully`);
+        
+        // Display analytics
+        const analytics = yawChain.getBlockchainAnalytics();
+        console.log('\n📈 DEMONSTRATION COMPLETE');
+        console.log(`   Blocks: ${analytics.chainHeight}`);
+        console.log(`   TPS: ${analytics.tps.toFixed(2)}`);
+        console.log(`   Security Score: ${analytics.securityScore.toFixed(1)}/100`);
+        
+    } catch (error) {
+        console.error('Demonstration error (non-critical):', error.message);
+        console.log('Server will continue without demonstration');
+    }
+}
+
+// =================== MAIN APPLICATION ===================
+const shouldCluster = process.env.ENABLE_CLUSTER === 'true';
+
+if (!shouldCluster || YawClusterManager.initializeCluster()) {
+    try {
+        const yawServer = new YawAPIServer();
+        const contractEngine = new YawSmartContractEngine(yawServer.blockchain);
+        
+        // Add contract deployment endpoint
+        yawServer.app.post('/api/contracts/deploy', [
+            yawServer.authenticateToken.bind(yawServer),
+            body('contractType').isIn(['YAW-TOKEN', 'YAW-MULTISIG']),
+            body('params').isObject()
+        ], async (req, res) => {
+            try {
+                const errors = validationResult(req);
+                if (!errors.isEmpty()) {
+                    return res.status(400).json({ errors: errors.array() });
+                }
+                
+                const { contractType, params } = req.body;
+                const deployerAddress = req.user.publicKey.slice(0, 20);
+                
+                const deployment = await contractEngine.deployContract(
+                    contractType,
+                    params,
+                    deployerAddress
+                );
+                
+                res.json({
+                    success: true,
+                    data: deployment
+                });
+                
+            } catch (error) {
+                res.status(400).json({
+                    error: 'Contract deployment failed',
+                    message: error.message
+                });
+            }
         });
         
-      } catch (error) {
-        res.status(500).json({
-          success: false,
-          error: 'Failed to fetch address data',
-          message: error.message
+        // Add contract info endpoint
+        yawServer.app.get('/api/contracts/:address', (req, res) => {
+            try {
+                const { address } = req.params;
+                const contract = contractEngine.getContract(address);
+                
+                if (!contract) {
+                    return res.status(404).json({
+                        error: 'Contract not found'
+                    });
+                }
+                
+                res.json({
+                    success: true,
+                    data: contract
+                });
+                
+            } catch (error) {
+                res.status(500).json({
+                    error: 'Failed to fetch contract',
+                    message: error.message
+                });
+            }
         });
-      }
-    });
-    
-    // African countries endpoint
-    this.app.get('/api/countries', (req, res) => {
-      res.json({
-        success: true,
-        data: {
-          supportedCountries: this.auth.africanCountries,
-          totalCountries: 54, // Total African countries
-          networkCoverage: (this.auth.africanCountries.length / 54 * 100).toFixed(1) + '%',
-          validatorDistribution: this.blockchain.getValidatorDistribution()
-        },
-        message: '🌍 Ubuntu spans across Africa - united blockchain!',
-        ubuntu: 'Many countries, one Ubuntu vision!'
-      });
-    });
-    
-    // 404 handler with African wisdom
-    this.app.use('*', (req, res) => {
-      res.status(404).json({
-        error: 'Endpoint not found',
-        message: '🌍 Ubuntu wisdom: This path does not exist in our African blockchain',
-        availableEndpoints: [
-          'GET /health - Server health check',
-          'GET /api/blockchain/info - Blockchain information',
-          'POST /api/auth/connect - Connect wallet',
-          'POST /api/transactions/create - Create transaction',
-          'GET /api/analytics - Network analytics',
-          'GET /api/countries - African countries info'
-        ],
-        ubuntu: 'I am because we are - but this endpoint is not because it should not be',
-        suggestion: 'Check the documentation or use /health to verify connectivity'
-      });
-    });
-    
-    // Global error handler with Ubuntu philosophy
-    this.app.use((err, req, res, next) => {
-      console.error('🔥 Ubuntu Error:', err);
-      
-      res.status(err.status || 500).json({
-        success: false,
-        error: 'Ubuntu encountered a challenge',
-        message: NODE_ENV === 'development' ? err.message : 'Something went wrong in the African blockchain',
-        ubuntu: 'I am because we are - and we learn from our mistakes',
-        timestamp: Date.now(),
-        supportContact: 'team@yawnetwork.org'
-      });
-    });
-  }
-  
-  startPerformanceMonitoring() {
-    // Monitor and broadcast analytics every minute
-    setInterval(() => {
-      this.websocket.broadcastAnalyticsUpdate();
-    }, 60000);
-    
-    // Log performance metrics every 5 minutes
-    setInterval(() => {
-      const memUsage = process.memoryUsage();
-      const cpuUsage = process.cpuUsage();
-      
-      console.log('📊 UBUNTU PERFORMANCE METRICS:');
-      console.log(`   Memory: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB / ${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`);
-      console.log(`   CPU: User ${Math.round(cpuUsage.user / 1000)}ms, System ${Math.round(cpuUsage.system / 1000)}ms`);
-      console.log(`   Connections: ${this.websocket.connectedClients.size}`);
-      console.log(`   Blockchain: ${this.blockchain.networkStats.height} blocks, ${this.blockchain.networkStats.tps} TPS`);
-      console.log(`   Ubuntu Philosophy: ${this.blockchain.networkStats.height > 0 ? 'Strong' : 'Growing'} 🌍`);
-    }, 300000);
-  }
-  
-  start() {
-    const port = PORT;
-    
-    this.server.listen(port, '0.0.0.0', () => {
-      console.log('\n🌍 YAW NETWORK - AFRICAN BLOCKCHAIN SERVER STARTED! 🚀');
-      console.log('================================================');
-      console.log(`🔥 Server running on port ${port}`);
-      console.log(`⚡ Process ID: ${process.pid}`);
-      console.log(`🌍 Environment: ${NODE_ENV}`);
-      console.log(`🤝 Ubuntu Consensus: ACTIVE`);
-      console.log(`🔒 Security: Quantum-resistant`);
-      console.log(`📡 WebSocket: Real-time updates enabled`);
-      console.log(`🏛️  Validators: African nodes distributed`);
-      console.log(`💎 Blockchain Height: ${this.blockchain.networkStats.height}`);
-      console.log(`💰 Pending Transactions: ${this.blockchain.networkStats.pendingTransactions}`);
-      console.log('================================================');
-      console.log('🌟 UBUNTU MESSAGE: "I am because we are"');
-      console.log('🚀 African blockchain revolution is LIVE!');
-      console.log('💪 Ready to serve the world with African innovation!');
-      console.log('================================================\n');
-    });
-    
-    // Graceful shutdown handlers
-    process.on('SIGTERM', this.gracefulShutdown.bind(this));
-    process.on('SIGINT', this.gracefulShutdown.bind(this));
-    process.on('uncaughtException', (err) => {
-      console.error('🔥 Uncaught Exception:', err);
-      this.gracefulShutdown();
-    });
-    process.on('unhandledRejection', (reason, promise) => {
-      console.error('🔥 Unhandled Rejection at:', promise, 'reason:', reason);
-      this.gracefulShutdown();
-    });
-  }
-  
-  gracefulShutdown() {
-    console.log('\n🔄 UBUNTU GRACEFUL SHUTDOWN INITIATED...');
-    console.log('🌍 Saving African blockchain state...');
-    
-    this.server.close((err) => {
-      if (err) {
-        console.error('❌ Error during shutdown:', err);
+        
+        // START SERVER FIRST
+        yawServer.start();
+        
+        // Run demonstration AFTER server starts (optional, wrapped in try-catch)
+        if (process.env.SKIP_DEMO !== 'true') {
+            setTimeout(() => {
+                demonstrateYawBlockchain(yawServer.blockchain)
+                    .then(() => console.log('Demonstration completed successfully'))
+                    .catch(err => console.log('Demo skipped:', err.message));
+            }, 3000); // Wait 3 seconds after server starts
+        }
+        
+        console.log('YAW NETWORK - COMPLETE BLOCKCHAIN ECOSYSTEM READY');
+        
+    } catch (error) {
+        console.error('Failed to start server:', error);
         process.exit(1);
-      }
-      
-      console.log('✅ Ubuntu server gracefully shutdown');
-      console.log('🌍 African blockchain state preserved');
-      console.log('🤝 Ubuntu philosophy: "We were because we are"');
-      console.log('🚀 Ready for next Ubuntu resurrection!');
-      process.exit(0);
-    });
-    
-    // Force close after 30 seconds
-    setTimeout(() => {
-      console.log('⚠️  Force closing Ubuntu server after 30 seconds');
-      process.exit(1);
-    }, 30000);
-  }
+    }
 }
 
-// =================== CLUSTER MANAGEMENT FOR PRODUCTION ===================
-if (cluster.isMaster && NODE_ENV === 'production') {
-  const numCPUs = os.cpus().length;
-  const numWorkers = Math.min(numCPUs, 4); // Max 4 workers for efficiency
-  
-  console.log('🌍 YAW NETWORK CLUSTER MASTER STARTED');
-  console.log(`🔥 Spawning ${numWorkers} Ubuntu workers across ${numCPUs} CPUs`);
-  
-  // Fork workers
-  for (let i = 0; i < numWorkers; i++) {
-    cluster.fork();
-  }
-  
-  cluster.on('exit', (worker, code, signal) => {
-    console.log(`🔄 Ubuntu Worker ${worker.process.pid} died (${signal || code}). Respawning with African resilience...`);
-    cluster.fork();
-  });
-  
-  console.log('🤝 Ubuntu Cluster Master: "I am because we are" - managing African workers');
-  
-} else {
-  // Worker process or development mode
-  const server = new YawNetworkServer();
-  server.start();
-  
-  if (cluster.isWorker) {
-    console.log(`👷 Ubuntu Worker ${process.pid} ready to serve African blockchain!`);
-  }
-}
-
-// Export for testing
-module.exports = { YawNetworkServer, YawBlockchainCore, YawWebSocketManager, YawAuthManager };
+module.exports = {
+    YawAPIServer,
+    YawSmartContractEngine,
+    YawCacheManager,
+    YawAuthSystem,
+    YawRealtimeManager
+};
