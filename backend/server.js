@@ -44,66 +44,40 @@ class YawClusterManager {
     }
 }
 
-// =================== REDIS CACHING LAYER ===================
+// =================== IN-MEMORY CACHING LAYER ===================
 class YawCacheManager {
     constructor() {
-        this.client = redis.createClient({
-            host: process.env.REDIS_HOST || 'localhost',
-            port: process.env.REDIS_PORT || 6379,
-            password: process.env.REDIS_PASSWORD,
-            db: 0
-        });
-        
-        this.client.on('connect', () => {
-            console.log('🔗 Redis cache connected - Lightning fast responses enabled!');
-        });
-        
-        this.client.on('error', (err) => {
-            console.error('❌ Redis error:', err);
-        });
+        this.cache = new Map(); // In-memory cache instead of Redis
+        console.log('Cache manager initialized (in-memory mode)');
     }
     
     async get(key) {
-        try {
-            const data = await this.client.get(`yaw:${key}`);
-            return data ? JSON.parse(data) : null;
-        } catch (error) {
-            console.error('Cache get error:', error);
-            return null;
-        }
+        return this.cache.get(`yaw:${key}`) || null;
     }
     
     async set(key, value, expireSeconds = 3600) {
-        try {
-            await this.client.setex(`yaw:${key}`, expireSeconds, JSON.stringify(value));
-            return true;
-        } catch (error) {
-            console.error('Cache set error:', error);
-            return false;
-        }
+        this.cache.set(`yaw:${key}`, value);
+        
+        // Auto-cleanup after expiration
+        setTimeout(() => {
+            this.cache.delete(`yaw:${key}`);
+        }, expireSeconds * 1000);
+        
+        return true;
     }
     
     async del(key) {
-        try {
-            await this.client.del(`yaw:${key}`);
-            return true;
-        } catch (error) {
-            console.error('Cache delete error:', error);
-            return false;
-        }
+        this.cache.delete(`yaw:${key}`);
+        return true;
     }
     
     async flushPattern(pattern) {
-        try {
-            const keys = await this.client.keys(`yaw:${pattern}*`);
-            if (keys.length > 0) {
-                await this.client.del(keys);
+        for (const key of this.cache.keys()) {
+            if (key.startsWith(`yaw:${pattern}`)) {
+                this.cache.delete(key);
             }
-            return true;
-        } catch (error) {
-            console.error('Cache flush error:', error);
-            return false;
         }
+        return true;
     }
 }
 
@@ -1024,7 +998,7 @@ class YawAPIServer {
                         pid: process.pid
                     },
                     cache: {
-                        connected: this.cache.client.connected,
+                        connected: true, // In-memory cache always connected,
                         // Additional cache stats would go here
                     },
                     realtime: {
