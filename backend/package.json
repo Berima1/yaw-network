@@ -63,6 +63,7 @@
     "crypto": "^1.0.1",
     "cluster": "^0.7.7",
     "winston": "^3.10.0",
+    "express-validator": "^7.0.1"
     "dotenv": "^16.3.1",
     "bcryptjs": "^2.4.3",
     "joi": "^17.9.2",
