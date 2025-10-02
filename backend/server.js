@@ -998,7 +998,7 @@ class YawAPIServer {
                         pid: process.pid
                     },
                     cache: {
-                        connected: true, // In-memory cache always connected,
+                        connected: true,  In-memory cache always connected,
                         // Additional cache stats would go here
                     },
                     realtime: {
