@@ -1,149 +1,56 @@
-markdown
-# 🌍 YAW NETWORK - AFRICAN BLOCKCHAIN REVOLUTION
+# YAW Network
 
-> **"I am because we are"** - Ubuntu Technology for Global Financial Inclusion
+A small, honest ledger API for the YAW testnet, running on **Google Cloud Run + Firestore**.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/your-username/yaw-network)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/yaw-network)
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/yaw-network)
+> **Status: testnet, unaudited. Do not use it to hold real value.**
+> The code on this branch has not yet been executed against a real Firestore. See [docs/STATUS.md](docs/STATUS.md) for exactly what has and has not been verified.
 
-## 🚀 **INSTANT DEPLOYMENT - GO LIVE IN 3 MINUTES!**
+## What it is
 
-### **Quick Start Options:**
+- A **single-operator, proof-of-authority** ledger: one operator key signs blocks. It is not decentralised.
+- Accounts and transactions are authenticated with **secp256k1 signatures** made on the user's device. The server never sees private keys.
+- State lives in **Firestore** (accounts, blocks, transactions, mempool). Every block is hash-linked and signed, and the whole chain can be re-verified at any time.
+- Stateless **Node.js** service, designed to run on **Cloud Run** (scale to zero, no servers to manage).
 
-1. **🔥 Render (Recommended for Backend)**
-   ```bash
-   git clone https://github.com/your-username/yaw-network
-   cd yaw-network
-   # Connect to Render - auto-deploys on push!
-   ```
+## What it is not (and was never)
 
-2. **⚡ Vercel (Frontend)**
-   ```bash
-   npx create-next-app --example https://github.com/your-username/yaw-network/frontend
-   vercel --prod
-   ```
+The earlier prototype advertised quantum-resistant cryptography, zero-knowledge proofs, a Byzantine "Ubuntu" consensus and triple-layer encryption. In the old code those were simulations or crashed on startup. They have been **removed, not hidden**. See [docs/LEGACY.md](docs/LEGACY.md).
 
-3. **🚄 Railway (Full Stack)**
-   ```bash
-   railway login
-   railway new
-   railway up
-   ```
+## Layout
 
-## ✨ **FEATURES - AFRICAN INNOVATION**
+```
+backend/
+  src/        crypto.js  apply.js  ledger.js  app.js  config.js  server.js ...
+  test/       unit tests + Firestore-emulator tests
+  Dockerfile  firestore.rules  .env.example
+docs/
+  ARCHITECTURE.md  API.md  SECURITY.md  DECISIONS.md  RUNBOOK.md  STATUS.md  LEGACY.md
+  ci/backend-ci.yml   (copy to .github/workflows/ - see RUNBOOK)
+frontend/     (not yet migrated to the new API)
+```
 
-- 🌍 **Ubuntu Consensus Algorithm** - African philosophy meets blockchain
-- 🔒 **Quantum-Resistant Encryption** - Future-proof security
-- ⚡ **50,000+ TPS Capability** - Faster than traditional blockchains
-- 📱 **Mobile-First Design** - Optimized for African networks
-- 🤝 **Community Governance** - Democratic blockchain decisions
-- 🌿 **Carbon Neutral** - Sustainable African mining
+## Run the tests
 
-## 🎯 **LIVE DEMO**
-
-- **API**: https://yaw-api.onrender.com
-- **Frontend**: https://yaw-network.vercel.app  
-- **Documentation**: https://docs.yawnetwork.org
-- **Status**: https://status.yawnetwork.org
-
-## 📊 **PERFORMANCE METRICS**
-
-| Metric | Value | vs Bitcoin | vs Ethereum |
-|--------|-------|------------|-------------|
-| TPS | 50,000+ | 7,000x faster | 3,300x faster |
-| Block Time | 15 seconds | 40x faster | 60x faster |
-| Energy Use | 99.7% less | Green | Green |
-| Transaction Fee | $0.001 | 1000x cheaper | 10,000x cheaper |
-
-## 🛠️ **TECH STACK**
-
-- **Backend**: Node.js + Express + Socket.IO
-- **Frontend**: React + Vite + TailwindCSS
-- **Database**: MongoDB Atlas (global)
-- **Cache**: Redis (distributed)
-- **Deployment**: Render + Vercel + Railway
-- **Monitoring**: Prometheus + Grafana
-
-## 🌍 **SUPPORTED AFRICAN COUNTRIES**
-
-🇳🇬 Nigeria • 🇰🇪 Kenya • 🇬🇭 Ghana • 🇿🇦 South Africa • 🇪🇬 Egypt • 🇲🇦 Morocco • 🇪🇹 Ethiopia • 🇺🇬 Uganda • 🇸🇳 Senegal • 🇷🇼 Rwanda
-
-*More countries added weekly - Ubuntu expansion!*
-
-## 🚀 **LOCAL DEVELOPMENT**
+Unit tests need only Node 22+:
 
 ```bash
-# 1. Clone the revolution
-git clone https://github.com/your-username/yaw-network
-cd yaw-network
-
-# 2. Install Ubuntu dependencies
-npm install
-
-# 3. Create environment file
-cp .env.example .env
-
-# 4. Start African blockchain
-npm run dev
-
-# 5. Open Ubuntu portal
-open http://localhost:3000
+cd backend && npm install && npm run test:unit
 ```
 
-## 🌐 **API ENDPOINTS**
+Emulator tests need Java 21+ (the Firestore emulator) and run everything against a local Firestore:
 
-```javascript
-// Get blockchain info
-GET /api/blockchain/info
-
-// Connect wallet (Ubuntu style)
-POST /api/auth/connect
-{
-  "walletAddress": "0x...",
-  "country": "nigeria"
-}
-
-// Create transaction
-POST /api/transactions/create
-{
-  "to": "0x...",
-  "amount": 100,
-  "data": { "message": "Ubuntu payment!" }
-}
-
-// Get analytics
-GET /api/analytics
-
-// Real-time WebSocket
-ws://localhost:3000/socket.io
+```bash
+npm run test:emulator
 ```
 
-## 💡 **UBUNTU PHILOSOPHY**
+## Docs
 
-> **"I am because we are"** - This African philosophy drives our blockchain. Every transaction, every block, every decision is made collectively for the benefit of all African communities.
-
-## 🤝 **CONTRIBUTING**
-
-We welcome contributions from across Africa and beyond! See [CONTRIBUTING.md](CONTRIBUTING.md)
-
-1. Fork the repository
-2. Create your Ubuntu branch (`git checkout -b feature/ubuntu-improvement`)
-3. Commit your changes (`git commit -m 'Add some Ubuntu magic'`)
-4. Push to the branch (`git push origin feature/ubuntu-improvement`)
-5. Open a Pull Request with Ubuntu spirit!
-
-## 📄 **LICENSE**
-
-MIT License - Built with Ubuntu love for the world 🌍
-
-## 🆘 **SUPPORT**
-
-- 📧 Email: team@yawnetwork.org
-- 💬 Discord: https://discord.gg/yawnetwork
-- 🐦 Twitter: [@YawNetwork](https://twitter.com/YawNetwork)
-- 📚 Docs: https://docs.yawnetwork.org
-
----
-
-**🌟 Made with Ubuntu love in Africa, for the world! 🚀**
+| File | Read it when |
+|---|---|
+| [STATUS.md](docs/STATUS.md) | you want the truth about what works today |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | you want to understand or change the design |
+| [API.md](docs/API.md) | you are building a wallet or frontend |
+| [SECURITY.md](docs/SECURITY.md) | before any real user touches it |
+| [DECISIONS.md](docs/DECISIONS.md) | you wonder why something is the way it is |
+| [RUNBOOK.md](docs/RUNBOOK.md) | you deploy, roll back or debug |
+| [LEGACY.md](docs/LEGACY.md) | you find references to the old Render/in-memory prototype |

@@ -1,0 +1,71 @@
+# Copy this file to .github/workflows/backend-ci.yml (the GitHub connector cannot write workflow files).
+name: backend-ci
+
+on:
+  push:
+    branches: [main, gcp-firestore-migration]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # migration phase only: lets the last step publish test logs to the ci-logs branch
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies
+        shell: bash
+        working-directory: backend
+        run: npm install --no-audit --no-fund 2>&1 | tee ../install.log
+
+      - name: Unit tests (no network, no emulator)
+        shell: bash
+        working-directory: backend
+        run: npm run test:unit 2>&1 | tee ../unit.log
+
+      - name: Firestore emulator tests
+        if: ${{ !cancelled() }}
+        shell: bash
+        working-directory: backend
+        env:
+          REQUIRE_EMULATOR: 'true'
+        run: npm run test:emulator 2>&1 | tee ../emulator.log
+
+      - name: Publish logs to the ci-logs branch (migration phase only)
+        if: ${{ always() }}
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          mkdir -p /tmp/ci-logs
+          cp -f install.log unit.log emulator.log /tmp/ci-logs/ 2>/dev/null || true
+          echo "sha=${GITHUB_SHA} run=${GITHUB_RUN_ID} status=${JOB_STATUS}" > /tmp/ci-logs/RUN.txt
+          git config user.name "ci-logs"
+          git config user.email "ci-logs@users.noreply.github.com"
+          git checkout --orphan ci-logs-tmp
+          git rm -rf --quiet . || true
+          cp /tmp/ci-logs/* .
+          git add -A
+          git commit --quiet -m "CI logs for ${GITHUB_SHA}"
+          git push --force origin HEAD:refs/heads/ci-logs
