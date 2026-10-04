@@ -1,0 +1,40 @@
+# One-off bootstrap, already executed on 2026-10-04 (Cloud Build 25b07d92-6c4f-4550-9314-949c16064b88, SUCCESS).
+# Creates the runtime and builder service accounts and the two secrets.
+# Secret values are generated inside the build from /dev/urandom and are never printed.
+# Idempotent: re-running leaves existing accounts, secrets and secret versions untouched.
+# Run as the project's default compute service account (it has Editor, which is enough to create service accounts):
+#   gcloud builds submit --no-source --config=deploy/bootstrap.yaml \
+#     --service-account=projects/yaw-network-prod/serviceAccounts/169601424993-compute@developer.gserviceaccount.com \
+#     --region=africa-south1 --project=yaw-network-prod
+# Note: $$ is how Cloud Build writes a literal $ for the shell.
+options:
+  logging: CLOUD_LOGGING_ONLY
+steps:
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        P=yaw-network-prod
+        for sa in yaw-ledger-api yaw-builder; do
+          if gcloud iam service-accounts describe $${sa}@$${P}.iam.gserviceaccount.com --project=$${P} >/dev/null 2>&1; then
+            echo "service account $${sa} already exists"
+          else
+            gcloud iam service-accounts create $${sa} --display-name="YAW $${sa}" --project=$${P}
+          fi
+        done
+        for s in operator-private-key producer-token; do
+          if gcloud secrets describe $${s} --project=$${P} >/dev/null 2>&1; then
+            echo "secret $${s} already exists"
+          else
+            gcloud secrets create $${s} --replication-policy=automatic --project=$${P}
+          fi
+          if [ -z "$$(gcloud secrets versions list $${s} --project=$${P} --format='value(name)' --limit=1)" ]; then
+            head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' | gcloud secrets versions add $${s} --data-file=- --project=$${P}
+            echo "secret $${s}: first version created (value not shown)"
+          else
+            echo "secret $${s} already has a version; left untouched"
+          fi
+        done
+        echo BOOTSTRAP_OK

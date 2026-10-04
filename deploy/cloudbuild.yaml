@@ -1,0 +1,41 @@
+# Builds the ledger API image from a pinned commit of the public repo, gated by the unit tests.
+# Executed on 2026-10-04 for commit b071fb3 (Cloud Build 842e04ea-93ab-4410-8304-6a4906bcf1e9, SUCCESS).
+# Emulator tests are not run here (they need the Firestore emulator); they run in GitHub Actions.
+#   gcloud builds submit --no-source --config=deploy/cloudbuild.yaml --substitutions=_TAG=<7-char commit> \
+#     --region=africa-south1 --project=yaw-network-prod
+# The clone step fails on purpose if the branch head is not the commit you asked for.
+options:
+  logging: CLOUD_LOGGING_ONLY
+substitutions:
+  _TAG: unset
+steps:
+  - id: clone
+    name: gcr.io/cloud-builders/git
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        git clone --depth=20 --branch=gcp-firestore-migration https://github.com/Berima1/yaw-network.git repo
+        cd repo
+        HEAD_SHORT=$$(git rev-parse --short=7 HEAD)
+        echo "branch head is $${HEAD_SHORT}, building ${_TAG}"
+        test "$${HEAD_SHORT}" = "${_TAG}"
+  - id: unit-tests
+    name: node:24-slim
+    dir: repo/backend
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        node -v
+        npm install --no-audit --no-fund
+        npm run test:unit
+  - id: docker-build
+    name: gcr.io/cloud-builders/docker
+    dir: repo/backend
+    args: ['build', '-t', 'africa-south1-docker.pkg.dev/yaw-network-prod/yaw/ledger-api:${_TAG}', '.']
+  - id: docker-push
+    name: gcr.io/cloud-builders/docker
+    args: ['push', 'africa-south1-docker.pkg.dev/yaw-network-prod/yaw/ledger-api:${_TAG}']
