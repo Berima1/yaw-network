@@ -41,9 +41,12 @@ export function createApp({ ledger, config, log }) {
   app.use(express.json({ limit: '16kb' }));
   app.use((req, res, next) => {
     const start = process.hrtime.bigint();
+    // originalUrl keeps the full path (req.path is relative to the router at 'finish' time).
+    // The query string is dropped on purpose so it can never leak into logs.
+    const path = req.originalUrl.split('?')[0];
     res.on('finish', () => {
-      if (req.path === '/health') return;
-      log.info({ method: req.method, path: req.path, status: res.statusCode, ms: Number(process.hrtime.bigint() - start) / 1e6 }, 'request');
+      if (path === '/health') return;
+      log.info({ method: req.method, path, status: res.statusCode, ms: Number(process.hrtime.bigint() - start) / 1e6 }, 'request');
     });
     next();
   });

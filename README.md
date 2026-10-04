@@ -1,9 +1,9 @@
 # YAW Network
 
-A small, honest ledger API for the YAW testnet, running on **Google Cloud Run + Firestore**.
+A small, honest ledger API for the YAW testnet, built for **Google Cloud Run + Firestore**.
 
 > **Status: testnet, unaudited. Do not use it to hold real value.**
-> The code on this branch has not yet been executed against a real Firestore. See [docs/STATUS.md](docs/STATUS.md) for exactly what has and has not been verified.
+> The tests pass against the Firestore **emulator** (exact run in [docs/STATUS.md](docs/STATUS.md)). It has **not** been deployed, and has not been run against real Firestore yet.
 
 ## What it is
 
