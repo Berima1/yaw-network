@@ -1,0 +1,34 @@
+
+> yaw-ledger-api@2.0.0 test:unit
+> node --test test/crypto.test.js test/apply.test.js test/config.test.js
+
+✔ executes sequential nonces and pays the fee to the fee recipient (1.923759ms)
+✔ a later nonce created first still executes after its predecessor (0.219939ms)
+✔ a nonce gap is skipped, not rejected, and changes nothing (1.052635ms)
+✔ insufficient funds are rejected without consuming the nonce or charging a fee (0.248432ms)
+✔ a stale nonce (replay) is rejected (0.44116ms)
+✔ recipient can also be the fee recipient (0.197806ms)
+✔ sender can also be the fee recipient (0.177456ms)
+✔ property: supply is conserved, balances never go negative, nonces advance one by one (5.213351ms)
+✔ loads sane defaults (3.061581ms)
+✔ the operator key is required and must be 32-byte lowercase hex (1.721657ms)
+✔ there must be a way to produce blocks (0.505987ms)
+✔ limits are enforced (0.843473ms)
+✔ genesis allocations are validated (2.376146ms)
+✔ cors origins are parsed (0.305717ms)
+✔ addresses are well formed, deterministic and unique (32.303232ms)
+✔ a signed transaction verifies and reports the sender (13.111101ms)
+✔ any change to the transaction invalidates the signature (15.720987ms)
+✔ a signature is only valid on the chain it was made for (no cross-chain replay) (5.816595ms)
+✔ high-S (malleable) signatures are rejected (3.846997ms)
+✔ garbage keys and signatures never verify (1.529479ms)
+✔ merkle root: empty, single, order-sensitive (0.478295ms)
+✔ block hash commits to every field, including txCount (0.389683ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 171.322217

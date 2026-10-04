@@ -1,0 +1,53 @@
+
+> yaw-ledger-api@2.0.0 test:emulator
+> npx --yes firebase-tools@14 emulators:exec --only firestore --project demo-yaw "node --test --test-concurrency=1 test/ledger.emulator.test.js test/api.emulator.test.js"
+
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+npm warn deprecated tar@6.2.1: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated json-ptr@3.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+npm warn deprecated uuid@9.0.1: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+npm warn deprecated uuid@8.3.2: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+[33m[1m⚠ [22m[39m Could not find config (firebase.json) so using defaults.
+[36m[1mi  emulators:[22m[39m Starting emulators: firestore
+[36m[1mi  emulators:[22m[39m Detected demo project ID "demo-yaw", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+[33m[1m⚠  firestore:[22m[39m Did not find a Cloud Firestore rules file specified in a firebase.json config file.
+[33m[1m⚠  firestore:[22m[39m The emulator will default to allowing all reads and writes. Learn more about this option: https://firebase.google.com/docs/emulator-suite/install_and_configure#security_rules_configuration.
+[33m[1m⚠ [22m[39m It appears you are running in a CI environment. You can avoid downloading the Firestore Emulator repeatedly by caching the /home/runner/.cache/firebase/emulators directory.
+[36m[1mi  firestore:[22m[39m downloading cloud-firestore-emulator-v1.19.8.jar...
+
+[36m[1mi  firestore:[22m[39m Firestore Emulator logging to [1mfirestore-debug.log[22m
+[32m[1m✔  firestore:[22m[39m Firestore Emulator UI websocket is running on 9150.
+[36m[1mi [22m[39m Running script: [1mnode --test --test-concurrency=1 test/ledger.emulator.test.js test/api.emulator.test.js[22m
+✔ serves health, readiness, chain info and security headers (1109.14557ms)
+✔ full flow: signed transaction is confirmed instantly and queryable (254.403035ms)
+✔ without instant blocks a transaction stays pending (202) until a block is produced (53.945916ms)
+✔ rejects malformed input with clear errors and never a 500 (47.135765ms)
+✔ operator endpoints require the producer token (127.113838ms)
+✔ operator endpoints are disabled (fail closed) when no token is configured (20.551767ms)
+✔ CORS is off by default and limited to configured origins (30.494614ms)
+✔ rate limits transaction submissions (17.445189ms)
+✔ creates the genesis block once, is idempotent and refuses a mismatched configuration (304.960758ms)
+✔ moves funds, pays the fee to the operator and confirms in a block (136.030352ms)
+✔ rejects invalid submissions with specific error codes (57.252373ms)
+✔ blocks duplicates, nonce-slot reuse and replays (90.810204ms)
+✔ executes out-of-order nonces from one sender in nonce order within a single block (82.280187ms)
+✔ rejects at block time what no longer fits, and frees the nonce slot (100.523385ms)
+✔ records rejections even when no block is produced (87.658656ms)
+✔ sends fees to a configured fee recipient (58.779776ms)
+✔ never double-applies a transaction under concurrent block producers (3372.802286ms)
+✔ detects tampering with a stored block (68.146155ms)
+✔ detects a forged balance in the supply audit (32.203819ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6360.648095
+[32m[1m✔ [22m[39m Script exited successfully (code 0)
+[36m[1mi  emulators:[22m[39m Shutting down emulators.
+[36m[1mi  firestore:[22m[39m Stopping Firestore Emulator
+[36m[1mi  hub:[22m[39m Stopping emulator hub
+[36m[1mi  logging:[22m[39m Stopping Logging Emulator
